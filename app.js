@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const detailRoutes = require("./routes/detailRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 
 const app = express();
@@ -38,7 +37,7 @@ app.use((err, req, res, next) => {
 });
 
 // Mount routes
-app.use("/", projectRoutes);
+app.use("/api/", projectRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
