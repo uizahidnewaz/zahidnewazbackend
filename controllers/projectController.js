@@ -1,4 +1,5 @@
 const Project = require("../models/projects");
+const mongoose = require("mongoose");
 const cloudinary = require("cloudinary").v2;
 
 cloudinary.config({
@@ -9,18 +10,50 @@ cloudinary.config({
 
 exports.createProject = async (req, res) => {
   try {
+    console.log("Create project function called");
+    console.log("Request body:", req.body);
+
+    if (!req.body.iid) {
+      return res.status(400).json({ message: "Project ID (iid) is required" });
+    }
+
     let image = "";
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      image = result.secure_url;
+      console.log("File uploaded, path:", req.file.path);
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path);
+        image = result.secure_url;
+        console.log("Image uploaded to Cloudinary:", image);
+      } catch (cloudinaryError) {
+        console.error("Cloudinary upload error:", cloudinaryError);
+        // Continue with empty image if Cloudinary fails
+      }
     }
 
     // Check if a project with the same iid already exists
-    const existingProject = await Project.findOne({ iid: req.body.iid });
-    if (existingProject) {
-      return res
-        .status(400)
-        .json({ message: "A project with this ID already exists" });
+    try {
+      if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({
+          message:
+            "Database connection is not available. Please try again later.",
+        });
+      }
+
+      const existingProject = await Project.findOne({
+        iid: req.body.iid,
+      }).maxTimeMS(5000);
+
+      if (existingProject) {
+        return res
+          .status(400)
+          .json({ message: "A project with this ID already exists" });
+      }
+    } catch (dbError) {
+      console.error("Database query error:", dbError);
+      return res.status(500).json({
+        message: "Database error when checking for existing project",
+        error: dbError.message,
+      });
     }
 
     const project = new Project({
@@ -28,10 +61,42 @@ exports.createProject = async (req, res) => {
       image,
     });
 
-    await project.save();
-    res.status(201).json(project);
+    try {
+      if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({
+          message:
+            "Database connection is not available. Please try again later.",
+        });
+      }
+
+      await project.save();
+      console.log("Project saved successfully:", project);
+      res.status(201).json(project);
+    } catch (saveError) {
+      console.error("Error saving project:", saveError);
+
+      if (
+        saveError.name === "MongooseServerSelectionError" ||
+        saveError.message.includes("buffering timed out")
+      ) {
+        return res.status(503).json({
+          message: "Database connection timed out. Please try again later.",
+          error: saveError.message,
+        });
+      }
+
+      res.status(500).json({
+        error: saveError.message,
+        stack:
+          process.env.NODE_ENV === "development" ? saveError.stack : undefined,
+      });
+    }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating project:", err);
+    res.status(500).json({
+      error: err.message,
+      stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    });
   }
 };
 

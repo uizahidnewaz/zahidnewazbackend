@@ -7,14 +7,20 @@ const projectController = require("../controllers/projectController");
 // Debug middleware
 router.use((req, res, next) => {
   console.log(`API Request: ${req.method} ${req.originalUrl}`);
+  if (req.file) {
+    console.log("File uploaded:", req.file);
+  }
+  if (req.body) {
+    console.log("Request body:", req.body);
+  }
   next();
 });
 
 // Add try/catch to avoid crashes
-router.post("/projects", upload.single("image"), (req, res, next) => {
+router.post("/projects", upload.single("image"), async (req, res, next) => {
   try {
     console.log("Processing POST /projects request");
-    projectController.createProject(req, res);
+    await projectController.createProject(req, res);
   } catch (error) {
     console.error("Error in POST /projects:", error);
     next(error);
