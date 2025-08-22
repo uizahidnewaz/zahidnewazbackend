@@ -14,18 +14,20 @@ exports.createProject = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path);
       image = result.secure_url;
     }
-    
+
     // Check if a project with the same iid already exists
     const existingProject = await Project.findOne({ iid: req.body.iid });
     if (existingProject) {
-      return res.status(400).json({ message: "A project with this ID already exists" });
+      return res
+        .status(400)
+        .json({ message: "A project with this ID already exists" });
     }
-    
+
     const project = new Project({
       iid: req.body.iid,
       image,
     });
-    
+
     await project.save();
     res.status(201).json(project);
   } catch (err) {
@@ -69,19 +71,21 @@ exports.getProjectByIid = async (req, res) => {
 exports.updateProject = async (req, res) => {
   try {
     let updateData = {};
-    
+
     // Only update iid if provided
     if (req.body.iid) {
       // Check if another project with the same iid already exists (excluding the current one)
-      const existingProject = await Project.findOne({ 
+      const existingProject = await Project.findOne({
         iid: req.body.iid,
-        _id: { $ne: req.params.id }
+        _id: { $ne: req.params.id },
       });
-      
+
       if (existingProject) {
-        return res.status(400).json({ message: "A project with this ID already exists" });
+        return res
+          .status(400)
+          .json({ message: "A project with this ID already exists" });
       }
-      
+
       updateData.iid = req.body.iid;
     }
 
