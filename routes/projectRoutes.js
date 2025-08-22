@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+// Configure multer to store files in memory instead of disk
+const upload = multer({ storage: multer.memoryStorage() });
+const { cloudinaryUpload } = require("../middleware/cloudinaryMiddleware");
 const projectController = require("../controllers/projectController");
 
 // Debug middleware
@@ -17,15 +19,20 @@ router.use((req, res, next) => {
 });
 
 // Add try/catch to avoid crashes
-router.post("/projects", upload.single("image"), async (req, res, next) => {
-  try {
-    console.log("Processing POST /projects request");
-    await projectController.createProject(req, res);
-  } catch (error) {
-    console.error("Error in POST /projects:", error);
-    next(error);
+router.post(
+  "/projects",
+  upload.single("image"),
+  cloudinaryUpload,
+  async (req, res, next) => {
+    try {
+      console.log("Processing POST /projects request");
+      await projectController.createProject(req, res);
+    } catch (error) {
+      console.error("Error in POST /projects:", error);
+      next(error);
+    }
   }
-});
+);
 
 router.get("/projects", projectController.getProjects);
 router.get("/projects/:id", projectController.getProjectById);
@@ -33,6 +40,7 @@ router.get("/projects/:id", projectController.getProjectById);
 router.put(
   "/projects/:id",
   upload.single("image"),
+  cloudinaryUpload,
   projectController.updateProject
 );
 

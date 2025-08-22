@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const { connectDB, isDBConnected } = require("./utils/db");
 const projectRoutes = require("./routes/projectRoutes");
+const projectDetailsRoutes = require("./routes/projectDetailsRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -51,6 +52,7 @@ app.use((err, req, res, next) => {
 
 // Mount routes
 app.use("/api/", projectRoutes);
+app.use("/api/", projectDetailsRoutes);
 
 // Start server
 const startServer = () => {

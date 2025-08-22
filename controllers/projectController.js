@@ -16,8 +16,12 @@ exports.createProject = async (req, res) => {
     let imageUrl = "";
     let imagePublicId = "";
 
-    // Handle image upload if file is provided
-    if (req.file) {
+    // Handle image upload if cloudinary result or file is provided
+    if (req.cloudinaryResult) {
+      imageUrl = req.cloudinaryResult.url;
+      imagePublicId = req.cloudinaryResult.public_id;
+      console.log("Image uploaded to Cloudinary:", imageUrl);
+    } else if (req.file) {
       console.log("File uploaded, path:", req.file.path);
       try {
         const uploadResult = await uploadImage(req.file.path);
@@ -136,7 +140,15 @@ exports.updateProject = async (req, res) => {
       updateData.priority = Number(req.body.priority);
 
     // Handle image update if file is provided
-    if (req.file) {
+    if (req.cloudinaryResult) {
+      updateData.image = req.cloudinaryResult.url;
+      updateData.imagePublicId = req.cloudinaryResult.public_id;
+
+      // Delete the old image from cloudinary if it exists
+      if (existingProject.imagePublicId) {
+        await deleteImage(existingProject.imagePublicId);
+      }
+    } else if (req.file) {
       try {
         // Upload new image to cloudinary
         const uploadResult = await uploadImage(req.file.path);
