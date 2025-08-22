@@ -2,12 +2,27 @@ const mongoose = require("mongoose");
 
 const projectSchema = new mongoose.Schema(
   {
-    iid: {
+    name: {
       type: String,
       required: true,
-      unique: true,
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+    priority: {
+      type: Number,
+      min: 1,
+      max: 10,
+      default: 5,
     },
     image: {
+      type: String,
+      default: "",
+    },
+    imagePublicId: {
       type: String,
       default: "",
     },
@@ -27,11 +42,11 @@ const projectSchema = new mongoose.Schema(
 
 // Add a pre-save hook to log saving operations
 projectSchema.pre("save", function (next) {
-  console.log("Saving project with ID:", this.iid);
+  console.log("Saving project with name:", this.name);
   next();
 });
 
 // Add index to improve query performance
-projectSchema.index({ iid: 1 });
+projectSchema.index({ name: 1 });
 
 module.exports = mongoose.model("project", projectSchema);

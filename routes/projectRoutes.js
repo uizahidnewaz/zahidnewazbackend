@@ -29,7 +29,6 @@ router.post("/projects", upload.single("image"), async (req, res, next) => {
 
 router.get("/projects", projectController.getProjects);
 router.get("/projects/:id", projectController.getProjectById);
-router.get("/projects/iid/:iid", projectController.getProjectByIid);
 
 router.put(
   "/projects/:id",
